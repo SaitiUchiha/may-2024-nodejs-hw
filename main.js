@@ -23,7 +23,7 @@ app.post('/users', async (req, res) => {
     try {
         const usersGet = await users.read();
         const newUser = {
-            id: users.read().length + 1,
+            id: usersGet.length + 1,
             name: req.body.name,
             email: req.body.email,
             password: req.body.password
@@ -44,7 +44,7 @@ app.delete('/users/:userId', async (req, res) => {
         }
         usersGet.splice(filteredUser, 1);
         await users.write(usersGet);
-        res.sendStatus(204);
+        res.sendStatus(204).json(usersGet);
     } catch (e) {
         res.status(500).json(e.message);
     }
@@ -54,7 +54,8 @@ app.get('/users/:userId', async (req, res) => {
     try {
         const usersGet = await users.read();
         const user = usersGet.find(user => user.id === Number(req.params.userId));
-        res.sendStatus(200).json(user);
+        res.json(user);
+        res.status(200);
     } catch (e) {
         res.status(500).json(e.message);
     }
