@@ -1,6 +1,6 @@
 const express = require('express')
 const dotenv = require('dotenv')
-const users = require('./users.json');
+const users = require('./fs.service.js');
 dotenv.config({path:'.env'})
 
 const app = express();
@@ -11,30 +11,56 @@ app.use(express.urlencoded({extended: true}));
 
 
 
-app.get('/users', (req, res) => {
-    res.status(200).json(users);
-});
-app.post('/users', (req, res) => {
-    const newUser = {
-        id: users.length + 1,
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password
+app.get('/users', async (req, res) => {
+    try {
+        const usersGet = await users.read();
+        res.status(200).json(usersGet);
+    } catch (e) {
+        res.status(500).json(e.message);
     }
-    users.push(newUser)
-    res.status(201).json(newUser);
 });
-app.delete('/users/:userId', (req, res) => {
-    const filteredUser = users.filter(user => user.id !== Number(req.params.userId));
-    res.sendStatus(204).json(filteredUser);
+app.post('/users', async (req, res) => {
+    try {
+        const usersGet = await users.read();
+        const newUser = {
+            id: users.read().length + 1,
+            name: req.body.name,
+            email: req.body.email,
+            password: req.body.password
+        }
+        usersGet.push(newUser);
+        await users.write(usersGet);
+        res.status(201).json(newUser);
+    } catch (e) {
+        res.status(500).json(e.message);
+    }
+});
+app.delete('/users/:userId', async (req, res) => {
+    try {
+        const usersGet = await users.read();
+        const filteredUser = usersGet.findIndex(user => user.id === Number(req.params.userId));
+        if (filteredUser === -1) {
+            return res.status(404).json('User not found');
+        }
+        usersGet.splice(filteredUser, 1);
+        await users.write(usersGet);
+        res.sendStatus(204);
+    } catch (e) {
+        res.status(500).json(e.message);
+    }
 });
 
-app.get('/users/:userId', (req, res) => {
-    const user = users.find(user => user.id === Number(req.params.userId));
-    res.sendStatus(200).json(user);
+app.get('/users/:userId', async (req, res) => {
+    try {
+        const usersGet = await users.read();
+        const user = usersGet.find(user => user.id === Number(req.params.userId));
+        res.sendStatus(200).json(user);
+    } catch (e) {
+        res.status(500).json(e.message);
+    }
 });
 
-app.patch('/users/:userId', (req, res) => {
+app.patch('/users/:userId', async (req, res) => {
     const {
         params: { userId },
         body,
@@ -42,12 +68,14 @@ app.patch('/users/:userId', (req, res) => {
     const parseId = parseInt(userId);
     if (isNaN(parseId)) return res.sendStatus(400);
 
-    const findUserIndex = users.findIndex((user) => user.id === parseId);
+    const usersGet = await users.read();
+    const findUserIndex = usersGet.findIndex((user) => user.id === parseId);
     if (findUserIndex === -1) return res.sendStatus(404);
 
-    users[findUserIndex] = { ...users[findUserIndex], ...body };
+    usersGet[findUserIndex] = { ...usersGet[findUserIndex], ...body };
 
-    return res.sendStatus(201).json(users);
+    await users.write(usersGet);
+    return res.sendStatus(201).json(usersGet);
 });
 
 
