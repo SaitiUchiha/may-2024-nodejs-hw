@@ -31,4 +31,4 @@ const result = async (): Promise<IUser[]> => {
     console.log("Error:", error.message);
   }
 };
-export { read, write, result };
+export { read, result, write };
