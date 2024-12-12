@@ -38,12 +38,8 @@ app.post('/users', async (req, res) => {
 app.delete('/users/:userId', async (req, res) => {
     try {
         const usersGet = await users.read();
-        const filteredUser = usersGet.findIndex(user => user.id === Number(req.params.userId));
-        if (filteredUser === -1) {
-            return res.status(404).json('User not found');
-        }
-        usersGet.splice(filteredUser, 1);
-        await users.write(usersGet);
+        const filteredUser = usersGet.filter(user => user.id !== Number(req.params.userId));
+        await users.write(filteredUser);
         res.sendStatus(204).json(usersGet);
     } catch (e) {
         res.status(500).json(e.message);
@@ -54,6 +50,7 @@ app.get('/users/:userId', async (req, res) => {
     try {
         const usersGet = await users.read();
         const user = usersGet.find(user => user.id === Number(req.params.userId));
+        if (!user) return res.sendStatus(404);
         res.json(user);
         res.status(200);
     } catch (e) {
