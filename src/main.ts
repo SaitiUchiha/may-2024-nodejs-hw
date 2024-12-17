@@ -1,11 +1,9 @@
-import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
+import * as mongoose from "mongoose";
 
+import { config } from "./configs/configs";
 import { ApiError } from "./errors/api.error";
 import { userRouter } from "./routers/user.router";
-// import { read, result, write } from "./services/fs.service";
-
-dotenv.config({ path: ".env" });
 
 const app = express();
 
@@ -26,8 +24,8 @@ process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
   process.exit(1);
 });
-
-const port = process.env.PORT;
-app.listen(port, () => {
-  console.log(`Server has been started on port ${port}`);
+console.log(config.mongoUrl);
+app.listen(config.port, async () => {
+  await mongoose.connect(config.mongoUrl);
+  console.log(`Server has been started on port ${config.port}`);
 });
