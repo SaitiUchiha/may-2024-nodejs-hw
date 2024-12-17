@@ -11,7 +11,7 @@ class UserService {
     return await userRepository.getList();
   }
   public async create(dto: Partial<IUserDtoCreate>): Promise<IUser> {
-    await this.isEmailUnuque(dto.email);
+    await this.isEmailUnique(dto.email);
     if (!dto.name || dto.name.length < 3) {
       throw new ApiError(
         "Name is required and should be minimum 3 symbols",
@@ -53,7 +53,7 @@ class UserService {
     return await userRepository.update(userId, dto);
   }
 
-  private async isEmailUnuque(email: string): Promise<void> {
+  private async isEmailUnique(email: string): Promise<void> {
     const user = await userRepository.getEmail(email);
     if (user) {
       throw new ApiError("Email is already in use", 409);
