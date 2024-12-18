@@ -31,19 +31,21 @@ class CommonMiddleware {
     };
   }
 
-  public isEmailUnique() {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const user = await userRepository.getEmail(req.body.email);
-        if (user) {
-          throw new ApiError("Email is already in use", 409);
-        }
-        next();
-      } catch (e) {
-        next(e);
+  public isEmailUnique = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const user = await userRepository.getEmail(req.body.email);
+      if (user) {
+        throw new ApiError("Email is already in use", 409);
       }
-    };
-  }
+      next();
+    } catch (e) {
+      next(e);
+    }
+  };
 }
 
 export const commonMiddleware = new CommonMiddleware();
