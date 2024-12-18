@@ -31,10 +31,9 @@ class CommonMiddleware {
     };
   }
 
-  public isEmailUnique(validator: ObjectSchema) {
+  public isEmailUnique() {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        req.body = await validator.validateAsync(req.body);
         const user = await userRepository.getEmail(req.body.email);
         if (user) {
           throw new ApiError("Email is already in use", 409);
