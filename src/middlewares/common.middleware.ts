@@ -3,6 +3,7 @@ import { ObjectSchema } from "joi";
 import { isObjectIdOrHexString } from "mongoose";
 
 import { ApiError } from "../errors/api.error";
+import { userRepository } from "../repositories/user.repository";
 
 class CommonMiddleware {
   public isIdValid(key: string) {
@@ -28,6 +29,13 @@ class CommonMiddleware {
         next(new ApiError(e.details[0].message, 400));
       }
     };
+  }
+
+  public async isEmailUnique(email: string): Promise<void> {
+    const user = await userRepository.getEmail(email);
+    if (user) {
+      throw new ApiError("Email is already in use", 409);
+    }
   }
 }
 
