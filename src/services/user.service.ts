@@ -4,7 +4,6 @@ import {
   IUserDtoCreate,
   IUserDtoUpdate,
 } from "../interfaces/user.interface";
-import { commonMiddleware } from "../middlewares/common.middleware";
 import { userRepository } from "../repositories/user.repository";
 
 class UserService {
@@ -12,8 +11,6 @@ class UserService {
     return await userRepository.getList();
   }
   public async create(dto: Partial<IUserDtoCreate>): Promise<IUser> {
-    const email = dto.email;
-    await commonMiddleware.isEmailUnique(email);
     return await userRepository.create(dto);
   }
   public async getUserById(userId: string): Promise<IUser> {
