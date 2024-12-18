@@ -22,8 +22,4 @@ export class userValidator {
     age: this.age,
     phone: this.phone,
   });
-
-  public static isEmailValid = joi.object({
-    email: this.email,
-  });
 }

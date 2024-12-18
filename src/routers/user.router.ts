@@ -10,7 +10,7 @@ router.get("/", userController.getList);
 router.post(
   "/",
   commonMiddleware.validateBody(userValidator.create),
-  commonMiddleware.isEmailUnique(userValidator.isEmailValid),
+  commonMiddleware.isEmailUnique(userValidator.create),
   userController.create,
 );
 router.get(
