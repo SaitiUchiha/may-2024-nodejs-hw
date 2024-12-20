@@ -1,5 +1,3 @@
-import { ObjectSchema } from "joi";
-
 import { IUser, IUserDtoUpdate } from "../interfaces/user.interface";
 import { User } from "../models/user.model";
 
@@ -12,19 +10,23 @@ class UserRepository {
     return await User.create(dto);
   }
 
+  public async getMyId(userId: string): Promise<IUser> {
+    return await User.findById(userId);
+  }
+
   public async getById(userId: string): Promise<IUser> {
     return await User.findById(userId);
   }
 
-  public async getEmail(email: ObjectSchema): Promise<IUser> {
+  public async getEmail(email: string): Promise<IUser> {
     return await User.findOne({ email });
   }
 
-  public async delete(id: string): Promise<void> {
+  public async deleteMe(id: string): Promise<void> {
     await User.deleteOne({ _id: id });
   }
 
-  public async update(id: string, dto: IUserDtoUpdate): Promise<IUser> {
+  public async updateMe(id: string, dto: IUserDtoUpdate): Promise<IUser> {
     return await User.findByIdAndUpdate(id, dto, { new: true });
   }
 }
