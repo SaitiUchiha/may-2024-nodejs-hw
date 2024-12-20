@@ -1,5 +1,5 @@
 import { ApiError } from "../errors/api.error";
-import { ITokenPair } from "../interfaces/token.interface";
+import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import { ISignIn, IUser, IUserDtoCreate } from "../interfaces/user.interface";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
@@ -25,6 +25,9 @@ class AuthService {
     dto: ISignIn,
   ): Promise<{ user: IUser; tokens: ITokenPair }> {
     const user = await userRepository.getEmail(dto.email);
+    if (!user) {
+      throw new ApiError("Incorrect email or password", 401);
+    }
     const correctPassword = await passwordService.comparePassword(
       dto.password,
       user.password,
@@ -38,6 +41,19 @@ class AuthService {
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
     return { user, tokens };
+  }
+
+  public async refresh(
+    tokenPayload: ITokenPayload,
+    refreshToken: string,
+  ): Promise<ITokenPair> {
+    await tokenRepository.deleteOldTokens({ refreshToken });
+    const tokens = tokenService.generateTokens({
+      userId: tokenPayload.userId,
+      role: tokenPayload.role,
+    });
+    await tokenRepository.create({ ...tokens, _userId: tokenPayload.userId });
+    return tokens;
   }
 }
 
