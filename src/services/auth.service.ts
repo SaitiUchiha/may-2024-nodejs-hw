@@ -1,8 +1,11 @@
+import { config } from "../configs/configs";
+import { EmailTypeEnum } from "../enums/email-type.enum";
 import { ApiError } from "../errors/api.error";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import { ISignIn, IUser, IUserDtoCreate } from "../interfaces/user.interface";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
+import { emailService } from "./email.service";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
 
@@ -17,7 +20,10 @@ class AuthService {
       role: user.role,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
-
+    await emailService.sendEmail(EmailTypeEnum.WELCOME, "pustunnuy@gmail.com", {
+      name: user.name,
+      frontUrl: config.frontUrl,
+    });
     return { user, tokens };
   }
 
@@ -47,13 +53,34 @@ class AuthService {
     tokenPayload: ITokenPayload,
     refreshToken: string,
   ): Promise<ITokenPair> {
-    await tokenRepository.deleteOldTokens({ refreshToken });
+    await tokenRepository.deleteOldToken({ refreshToken });
     const tokens = tokenService.generateTokens({
       userId: tokenPayload.userId,
       role: tokenPayload.role,
     });
     await tokenRepository.create({ ...tokens, _userId: tokenPayload.userId });
     return tokens;
+  }
+
+  public async logout(
+    tokenPayload: ITokenPayload,
+    tokenId: string,
+  ): Promise<void> {
+    const user = await userRepository.getById(tokenPayload.userId);
+    await tokenRepository.deleteOldToken({ _id: tokenId });
+    await emailService.sendEmail(EmailTypeEnum.LOGOUT, config.smtpEmail, {
+      name: user.name,
+      frontUrl: config.frontUrl,
+    });
+  }
+
+  public async logoutAll(tokenPayload: ITokenPayload): Promise<void> {
+    const user = await userRepository.getById(tokenPayload.userId);
+    await tokenRepository.deleteOldTokens({ _userId: tokenPayload.userId });
+    await emailService.sendEmail(EmailTypeEnum.LOGOUT, config.smtpEmail, {
+      name: user.name,
+      frontUrl: config.frontUrl,
+    });
   }
 }
 
