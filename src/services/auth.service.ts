@@ -1,8 +1,17 @@
 import { config } from "../configs/configs";
+import { ActionTokenTypeEnum } from "../enums/action-token.type.enum";
 import { EmailTypeEnum } from "../enums/email-type.enum";
 import { ApiError } from "../errors/api.error";
+import { IVerifyToken } from "../interfaces/action-token.interface";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
-import { ISignIn, IUser, IUserDtoCreate } from "../interfaces/user.interface";
+import {
+  IForgotPassword,
+  IForgotPasswordSet,
+  ISignIn,
+  IUser,
+  IUserDtoCreate,
+} from "../interfaces/user.interface";
+import { actionTokenRepository } from "../repositories/action-token.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { emailService } from "./email.service";
@@ -20,9 +29,19 @@ class AuthService {
       role: user.role,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
-    await emailService.sendEmail(EmailTypeEnum.WELCOME, "pustunnuy@gmail.com", {
+    const actionToken = tokenService.generateActionTokens(
+      { userId: user._id, role: user.role },
+      ActionTokenTypeEnum.EMAIL_VERIFICATION,
+    );
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.EMAIL_VERIFICATION,
+      _userId: user._id,
+      token: actionToken,
+    });
+    await emailService.sendEmail(EmailTypeEnum.WELCOME, config.smtpEmail, {
       name: user.name,
       frontUrl: config.frontUrl,
+      actionToken,
     });
     return { user, tokens };
   }
@@ -81,6 +100,51 @@ class AuthService {
       name: user.name,
       frontUrl: config.frontUrl,
     });
+  }
+
+  public async forgotPassword(dto: IForgotPassword): Promise<void> {
+    const user = await userRepository.getEmail(dto.email);
+    if (!user) return;
+
+    const token = tokenService.generateActionTokens(
+      { userId: user._id, role: user.role },
+      ActionTokenTypeEnum.FORGOT_PASSWORD,
+    );
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.FORGOT_PASSWORD,
+      _userId: user._id,
+      token,
+    });
+    await emailService.sendEmail(
+      EmailTypeEnum.FORGOT_PASSWORD,
+      config.smtpEmail,
+      {
+        name: user.name,
+        frontUrl: config.frontUrl,
+        actionToken: token,
+      },
+    );
+  }
+
+  public async forgotPasswordSet(dto: IForgotPasswordSet): Promise<void> {
+    const payload = tokenService.verifyToken(
+      dto.token,
+      ActionTokenTypeEnum.FORGOT_PASSWORD,
+    );
+    const password = await passwordService.hashPassword(dto.password);
+    await userRepository.updateMe(payload.userId, { password });
+    await Promise.all([
+      actionTokenRepository.deleteOldToken({ token: dto.token }),
+      tokenRepository.deleteOldTokens({ _userId: payload.userId }),
+    ]);
+  }
+
+  public async verify(
+    dto: IVerifyToken,
+    tokenPayload: ITokenPayload,
+  ): Promise<void> {
+    await userRepository.updateMe(tokenPayload.userId, { isVerified: true });
+    await actionTokenRepository.deleteOldToken({ token: dto.token });
   }
 }
 
