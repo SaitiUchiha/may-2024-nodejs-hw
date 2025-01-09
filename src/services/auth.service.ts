@@ -5,13 +5,15 @@ import { ApiError } from "../errors/api.error";
 import { IVerifyToken } from "../interfaces/action-token.interface";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import {
-  IForgotPassword,
-  IForgotPasswordSet,
+  IChangePassword,
+  ILostPassword,
+  ILostPasswordSet,
   ISignIn,
   IUser,
   IUserDtoCreate,
 } from "../interfaces/user.interface";
 import { actionTokenRepository } from "../repositories/action-token.repository";
+import { oldPasswordRepository } from "../repositories/old-password.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { emailService } from "./email.service";
@@ -102,21 +104,21 @@ class AuthService {
     });
   }
 
-  public async forgotPassword(dto: IForgotPassword): Promise<void> {
+  public async lostPassword(dto: ILostPassword): Promise<void> {
     const user = await userRepository.getEmail(dto.email);
     if (!user) return;
 
     const token = tokenService.generateActionTokens(
       { userId: user._id, role: user.role },
-      ActionTokenTypeEnum.FORGOT_PASSWORD,
+      ActionTokenTypeEnum.LOST_PASSWORD,
     );
     await actionTokenRepository.create({
-      type: ActionTokenTypeEnum.FORGOT_PASSWORD,
+      type: ActionTokenTypeEnum.LOST_PASSWORD,
       _userId: user._id,
       token,
     });
     await emailService.sendEmail(
-      EmailTypeEnum.FORGOT_PASSWORD,
+      EmailTypeEnum.LOST_PASSWORD,
       config.smtpEmail,
       {
         name: user.name,
@@ -126,10 +128,10 @@ class AuthService {
     );
   }
 
-  public async forgotPasswordSet(dto: IForgotPasswordSet): Promise<void> {
+  public async lostPasswordSet(dto: ILostPasswordSet): Promise<void> {
     const payload = tokenService.verifyToken(
       dto.token,
-      ActionTokenTypeEnum.FORGOT_PASSWORD,
+      ActionTokenTypeEnum.LOST_PASSWORD,
     );
     const password = await passwordService.hashPassword(dto.password);
     await userRepository.updateMe(payload.userId, { password });
@@ -145,6 +147,44 @@ class AuthService {
   ): Promise<void> {
     await userRepository.updateMe(tokenPayload.userId, { isVerified: true });
     await actionTokenRepository.deleteOldToken({ token: dto.token });
+  }
+
+  public async changePassword(
+    dto: IChangePassword,
+    tokenPayload: ITokenPayload,
+  ): Promise<void> {
+    const user = await userRepository.getById(tokenPayload.userId);
+    const oldPasswords = await oldPasswordRepository.getListByUserId(
+      tokenPayload.userId,
+    );
+    const isPasswordValid = await passwordService.comparePassword(
+      dto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new ApiError("Incorrect password", 401);
+    }
+    await Promise.all(
+      [...oldPasswords, { password: user.password }].map(
+        async (oldPassword) => {
+          const isPrevPass = await passwordService.comparePassword(
+            dto.newPassword,
+            oldPassword.password,
+          );
+          if (isPrevPass) {
+            throw new ApiError("Password was already used before", 409);
+          }
+        },
+      ),
+    );
+
+    const password = await passwordService.hashPassword(dto.newPassword);
+    await userRepository.updateMe(tokenPayload.userId, { password });
+    await tokenRepository.deleteOldTokens({ _userId: tokenPayload.userId });
+    await oldPasswordRepository.create({
+      _userId: user._id,
+      password: user.password,
+    });
   }
 }
 

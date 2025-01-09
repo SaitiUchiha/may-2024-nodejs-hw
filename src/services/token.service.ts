@@ -28,9 +28,9 @@ class TokenService {
     let expiresIn: string;
 
     switch (type) {
-      case ActionTokenTypeEnum.FORGOT_PASSWORD:
-        secret = config.actionForgotPasswordSecret;
-        expiresIn = config.actionForgotPasswordExpiresIn;
+      case ActionTokenTypeEnum.LOST_PASSWORD:
+        secret = config.actionLostPasswordSecret;
+        expiresIn = config.actionLostPasswordExpiresIn;
         break;
       case ActionTokenTypeEnum.EMAIL_VERIFICATION:
         secret = config.actionEmailVerificationSecret;
@@ -56,8 +56,8 @@ class TokenService {
         case TokenTypeEnum.REFRESH:
           secret = config.jwtRefreshSecret;
           break;
-        case ActionTokenTypeEnum.FORGOT_PASSWORD:
-          secret = config.actionForgotPasswordSecret;
+        case ActionTokenTypeEnum.LOST_PASSWORD:
+          secret = config.actionLostPasswordSecret;
           break;
         case ActionTokenTypeEnum.EMAIL_VERIFICATION:
           secret = config.actionEmailVerificationSecret;

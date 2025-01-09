@@ -7,7 +7,7 @@ export type EmailTypeToPayloadType = {
     EmailCombinedPayloadType,
     "frontUrl" | "name" | "actionToken"
   >;
-  [EmailTypeEnum.FORGOT_PASSWORD]: PickRequired<
+  [EmailTypeEnum.LOST_PASSWORD]: PickRequired<
     EmailCombinedPayloadType,
     "frontUrl" | "name" | "actionToken"
   >;

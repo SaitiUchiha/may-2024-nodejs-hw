@@ -36,15 +36,22 @@ router.post(
 );
 
 router.post(
-  "/forgot-password",
-  commonMiddleware.validateBody(userValidator.forgotPassword),
-  authController.forgotPassword,
+  "/password/lost",
+  commonMiddleware.validateBody(userValidator.lostPassword),
+  authController.lostPassword,
 );
 
 router.put(
-  "/forgot-password",
-  authMiddleware.checkActionToken(ActionTokenTypeEnum.FORGOT_PASSWORD),
-  authController.forgotPasswordSet,
+  "/password/lost",
+  authMiddleware.checkActionToken(ActionTokenTypeEnum.LOST_PASSWORD),
+  authController.lostPasswordSet,
+);
+
+router.put(
+  "/password/change",
+  commonMiddleware.validateBody(userValidator.changePassword),
+  authMiddleware.checkAccessToken,
+  authController.changePassword,
 );
 
 router.post(

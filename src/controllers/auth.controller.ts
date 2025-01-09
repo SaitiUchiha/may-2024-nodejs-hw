@@ -3,8 +3,9 @@ import { NextFunction, Request, Response } from "express";
 import { IVerifyToken } from "../interfaces/action-token.interface";
 import { ITokenPayload } from "../interfaces/token.interface";
 import {
-  IForgotPassword,
-  IForgotPasswordSet,
+  IChangePassword,
+  ILostPassword,
+  ILostPasswordSet,
   ISignIn,
   IUserDtoCreate,
 } from "../interfaces/user.interface";
@@ -63,24 +64,24 @@ class AuthController {
     }
   }
 
-  public async forgotPassword(req: Request, res: Response, next: NextFunction) {
+  public async lostPassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const dto = req.body as IForgotPassword;
-      await authService.forgotPassword(dto);
+      const dto = req.body as ILostPassword;
+      await authService.lostPassword(dto);
       res.sendStatus(204);
     } catch (e) {
       next(e);
     }
   }
 
-  public async forgotPasswordSet(
+  public async lostPasswordSet(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
-      const dto = req.body as IForgotPasswordSet;
-      await authService.forgotPasswordSet(dto);
+      const dto = req.body as ILostPasswordSet;
+      await authService.lostPasswordSet(dto);
       res.sendStatus(204);
     } catch (e) {
       next(e);
@@ -92,6 +93,17 @@ class AuthController {
       const dto = req.body as IVerifyToken;
       const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
       await authService.verify(dto, tokenPayload);
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  public async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dto = req.body as IChangePassword;
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      await authService.changePassword(dto, tokenPayload);
       res.sendStatus(204);
     } catch (e) {
       next(e);
