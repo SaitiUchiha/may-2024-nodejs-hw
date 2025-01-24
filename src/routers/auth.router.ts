@@ -51,6 +51,7 @@ router.put(
   commonMiddleware.validateBody(userValidator.changePassword),
   authMiddleware.checkAccessToken,
   authController.changePassword,
+  authController.logoutAll,
 );
 
 router.post(
