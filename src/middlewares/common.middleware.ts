@@ -31,6 +31,17 @@ class CommonMiddleware {
     };
   }
 
+  public validateQuery(validator: ObjectSchema) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        req.query = await validator.validateAsync(req.query);
+        next();
+      } catch (e) {
+        next(new ApiError(e.details[0].message, 400));
+      }
+    };
+  }
+
   public isEmailUnique = async (
     req: Request,
     res: Response,

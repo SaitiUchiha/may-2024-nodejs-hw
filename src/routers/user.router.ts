@@ -9,7 +9,11 @@ import { userValidator } from "../validators/user.validator";
 
 const router = Router();
 
-router.get("/", userController.getList);
+router.get(
+  "/",
+  commonMiddleware.validateQuery(userValidator.getListQuery),
+  userController.getList,
+);
 router.get("/me", authMiddleware.checkAccessToken, userController.getMe);
 router.patch(
   "/me",
